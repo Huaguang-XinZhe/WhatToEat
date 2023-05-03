@@ -1,6 +1,8 @@
 package com.huaguang.whattoeat
 
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlin.random.Random
@@ -96,6 +99,7 @@ fun WhatToEat() {
     val displayDish = remember { mutableStateOf(displayDishDefaultValue) }
     val totalPrice = remember { mutableStateOf(0) }
     val displayList = mutableListOf<String>()
+    val allowClick = remember { mutableStateOf(true) }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -104,7 +108,7 @@ fun WhatToEat() {
     ) {
         TitleText("吃什么？")
         UiChangeText(displayDish, totalPrice)
-        RandomButtonRow(displayDish, totalPrice, displayList)
+        RandomButtonRow(displayDish, totalPrice, displayList, allowClick)
     }
 }
 
@@ -141,17 +145,20 @@ fun TitleText(title: String) {
 fun RandomButtonRow(
     displayDish: MutableState<String>,
     totalPrice: MutableState<Int>,
-    displayList: MutableList<String>
+    displayList: MutableList<String>,
+    allowClick: MutableState<Boolean>
 ) {
-    var isEClicked = false
+    val context = LocalContext.current
 
     Row(
         modifier = Modifier.padding(0.dp, 25.dp, 0.dp, 0.dp)
     ) {
         Button(
             onClick = {
-                updateRegularDish(isEClicked, displayDish, totalPrice, displayList)
-            }
+                updateDish(false, displayDish,
+                    totalPrice, displayList, context, allowClick)
+            },
+            enabled = allowClick.value
         ) {
             Text(text = "日常随机")
         }
@@ -160,54 +167,41 @@ fun RandomButtonRow(
 
         Button(
             onClick = {
-                isEClicked = true
-                updateExpensiveDish(displayList, displayDish, totalPrice)
-            }
+                updateDish(true, displayDish,
+                    totalPrice, displayList, context, allowClick)
+            },
+            enabled = allowClick.value
         ) {
             Text(text = "整点好的")
         }
     }
 }
 
-fun updateRegularDish(
-    isEClicked: Boolean,
+fun updateDish(
+    isExpensive: Boolean,
     displayDish: MutableState<String>,
     totalPrice: MutableState<Int>,
-    displayList: MutableList<String>
+    displayList: MutableList<String>,
+    context: Context,
+    allowClick: MutableState<Boolean>
 ) {
-    var randomDish = randomDish(regularDishes)
+    val dishList = if (isExpensive) aMoreExpensiveDishes else regularDishes
+    var randomDish = randomDish(dishList)
 
-    if (isEClicked) {
-        //去重，入列（原始价格，未减 1）
-        while (displayList.contains(randomDish)) {
-            //包含就重新生成，不包含就跳出
-            randomDish = randomDish(regularDishes)
-        }
+    while (displayList.contains(randomDish)) {
+        randomDish = randomDish(dishList)
+    }
 
+    if (displayList.size < 10) {
         displayList.add(randomDish)
         getDisplayValue(displayList, displayDish, totalPrice)
     } else {
-        val (name, realPrice) = splitToDish(randomDish)
-        displayDish.value = "$name $realPrice 元"
-        totalPrice.value = realPrice
+        allowClick.value = false
+        Toast.makeText(context, "都点了 10 道菜了，还吃？",
+            Toast.LENGTH_SHORT).show()
     }
 }
 
-private fun updateExpensiveDish(
-    displayList: MutableList<String>,
-    displayDish: MutableState<String>,
-    totalPrice: MutableState<Int>
-) {
-    var randomDish = randomDish(aMoreExpensiveDishes)
-
-    while (displayList.contains(randomDish)) {
-        //包含就重新生成，不包含就跳出
-        randomDish = randomDish(aMoreExpensiveDishes)
-    }
-
-    displayList.add(randomDish)
-    getDisplayValue(displayList, displayDish, totalPrice)
-}
 
 fun getDisplayValue(
     displayList: MutableList<String>,
