@@ -1,7 +1,6 @@
 package com.huaguang.whattoeat
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 data class Dish(val name: String, val realPrice: Int)
@@ -75,7 +75,6 @@ val aMoreExpensiveDishes = listOf(
     "鲜嫩牛蛙木桶饭 23",
     "孜然羊肉木桶饭 25"
 )
-
 const val displayDishDefaultValue = "随机，随机啦 ～(￣▽￣～)~"
 
 /**
@@ -202,31 +201,22 @@ fun updateDish(
     }
 }
 
-
 fun getDisplayValue(
     displayList: MutableList<String>,
     displayDish: MutableState<String>,
     totalPrice: MutableState<Int>
 ) {
-    Log.i("展示菜肴列表", "displayList = $displayList")
-    val builder = StringBuilder()
-    var total = 0
+    val total = AtomicInteger(0)
+    val formattedList = displayList.mapIndexed { index, s ->
+        val (name, realPrice) = splitToDish(s)
+        total.addAndGet(realPrice)
+        "${index + 1}. $name $realPrice 元"
+    }.joinToString(separator = "\n\n")
 
-    if (displayList.size == 1) {
-        val (name, realPrice) = splitToDish(displayList.first())
-        displayDish.value = "$name $realPrice 元"
-        totalPrice.value = realPrice
-    } else {
-        displayList.forEachIndexed { index, s ->
-            val (name, realPrice) = splitToDish(s)
-            builder.append("${index + 1}. $name $realPrice 元\n\n")
-            total += realPrice
-        }
-
-        displayDish.value = builder.toString().dropLast(2)
-        totalPrice.value = total
-    }
+    displayDish.value = formattedList
+    totalPrice.value = total.get()
 }
+
 
 //@Composable
 //fun ExpensiveDishButtonRow(
