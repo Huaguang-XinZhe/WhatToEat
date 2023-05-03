@@ -5,13 +5,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlin.random.Random
@@ -76,15 +74,18 @@ val aMoreExpensiveDishes = listOf(
 )
 
 const val displayDishDefaultValue = "随机，随机啦 ～(￣▽￣～)~"
-const val clickNumDefaultValue = 0
 
 /**
- * 根据菜谱返回一个随机菜肴，包括菜名和价格。
- * 注意！这里的价格没有 -1
+ * 根据菜谱返回一个随机菜肴（未分列）
+ * 注意：这里的价格还没有进行处理（未减 1）
  */
-fun randomDish(dishes: List<String>): Dish {
+fun randomDish(dishes: List<String>): String {
     val randomIndex = Random.nextInt(0, dishes.size)
-    val (name, price) = dishes[randomIndex].split(" ")
+    return dishes[randomIndex]
+}
+
+fun splitToDish(randomDish: String): Dish {
+    val (name, price) = randomDish.split(" ")
     return Dish(name, price.toInt() - 1)
 }
 
@@ -93,9 +94,8 @@ fun randomDish(dishes: List<String>): Dish {
 @Composable
 fun WhatToEat() {
     val displayDish = remember { mutableStateOf(displayDishDefaultValue) }
-    val clickNum = remember { mutableStateOf(clickNumDefaultValue) }
     val totalPrice = remember { mutableStateOf(0) }
-    val checkList = mutableListOf<String>()
+    val displayList = mutableListOf<String>()
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -103,10 +103,31 @@ fun WhatToEat() {
         verticalArrangement = Arrangement.Center
     ) {
         TitleText("吃什么？")
-        DishText(displayDish)
-        RegularDishButton(displayDish, totalPrice)
-        ExpensiveDishButtonRow(
-            clickNum, displayDish, totalPrice, checkList
+        UiChangeText(displayDish, totalPrice)
+        RandomButtonRow(displayDish, totalPrice, displayList)
+    }
+}
+
+@Composable
+fun UiChangeText(
+    displayDish: MutableState<String>,
+    totalPrice: MutableState<Int>
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = displayDish.value,
+            modifier = Modifier
+                .padding(0.dp, 35.dp, 0.dp, 35.dp)
+                .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                .padding(10.dp)
+        )
+
+        Text(
+            text = "小计：${totalPrice.value} 元",
+            style = MaterialTheme.typography.bodyLarge
         )
     }
 }
@@ -117,122 +138,134 @@ fun TitleText(title: String) {
 }
 
 @Composable
-fun DishText(displayDish: MutableState<String>) {
-    Text(
-        text = displayDish.value,
-        modifier = Modifier
-            .padding(0.dp, 35.dp, 0.dp, 35.dp)
-            .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-            .padding(10.dp)
-    )
-}
-
-@Composable
-fun RegularDishButton(
-    displayDish: MutableState<String>,
-    totalPrice: MutableState<Int>
-) {
-    Button(
-        onClick = {
-            updateRegularDish(displayDish, totalPrice)
-        }
-    ) {
-        Text(text = "日常随机")
-    }
-}
-
-@Composable
-fun ExpensiveDishButtonRow(
-    clickNum: MutableState<Int>,
+fun RandomButtonRow(
     displayDish: MutableState<String>,
     totalPrice: MutableState<Int>,
-    checkList: MutableList<String>
+    displayList: MutableList<String>
 ) {
-    Row {
-        IconButton(
-            onClick = { restart(clickNum, displayDish, totalPrice, checkList) },
-            modifier = Modifier.padding(0.dp, 0.dp, 10.dp, 0.dp),
-            enabled = clickNum.value > 0
+    var isEClicked = false
+
+    Row(
+        modifier = Modifier.padding(0.dp, 25.dp, 0.dp, 0.dp)
+    ) {
+        Button(
+            onClick = {
+                updateRegularDish(isEClicked, displayDish, totalPrice, displayList)
+            }
         ) {
-            Icon(
-                painter = painterResource(R.drawable.start_over),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = Color(1, 148, 7, 255)
-            )
+            Text(text = "日常随机")
         }
+
+        Spacer(modifier = Modifier.width(20.dp))
 
         Button(
             onClick = {
-                updateExpensiveDish(clickNum, displayDish, totalPrice, checkList)
-            },
-            enabled = clickNum.value < 10
+                isEClicked = true
+                updateExpensiveDish(displayList, displayDish, totalPrice)
+            }
         ) {
             Text(text = "整点好的")
         }
-
-        Text(
-            text = "小计：${totalPrice.value} 元",
-            modifier = Modifier
-                .padding(20.dp, 0.dp, 0.dp, 0.dp)
-                .align(Alignment.CenterVertically)
-        )
     }
 }
 
-private fun restart(
-    clickNum: MutableState<Int>,
+fun updateRegularDish(
+    isEClicked: Boolean,
     displayDish: MutableState<String>,
     totalPrice: MutableState<Int>,
-    checkList: MutableList<String>
+    displayList: MutableList<String>
 ) {
-    clickNum.value = clickNumDefaultValue
-    displayDish.value = displayDishDefaultValue
-    totalPrice.value = 0
-    checkList.clear()
-}
+    var randomDish = randomDish(regularDishes)
 
+    if (isEClicked) {
+        //去重，入列（原始价格，未减 1）
+        while (displayList.contains(randomDish)) {
+            //包含就重新生成，不包含就跳出
+            randomDish = randomDish(regularDishes)
+        }
 
-private fun updateRegularDish(
-    displayDish: MutableState<String>,
-    totalPrice: MutableState<Int>
-) {
-    val (name, realPrice) = randomDish(regularDishes)
-    displayDish.value = "$name $realPrice 元"
-    totalPrice.value = realPrice
+        displayList.add(randomDish)
+        getDisplayValue(displayList, displayDish, totalPrice)
+    } else {
+        val (name, realPrice) = splitToDish(randomDish)
+        displayDish.value = "$name $realPrice 元"
+        totalPrice.value = realPrice
+    }
 }
 
 private fun updateExpensiveDish(
-    clickNum: MutableState<Int>,
+    displayList: MutableList<String>,
     displayDish: MutableState<String>,
-    totalPrice: MutableState<Int>,
-    checkList: MutableList<String>
+    totalPrice: MutableState<Int>
 ) {
-    clickNum.value++
-    var (name, realPrice) = randomDish(aMoreExpensiveDishes)
+    var randomDish = randomDish(aMoreExpensiveDishes)
 
-    //第一次，直接加入查重列表中，不判断
-    if(clickNum.value > 1) {
-        while (name in checkList) {
-            //以下代码是错误的，在 Kotlin 中，解构声明不能直接用于更新已有变量。
-//            (name, realPrice) = randomDish(aMoreExpensiveDishes)
-            //但可以使用解构声明为新变量赋值，然后将新变量的值赋给已有变量。
-            // 更新 name 和 realPrice 变量的值
-            val (newName, newRealPrice) = randomDish(aMoreExpensiveDishes)
-            name = newName
-            realPrice = newRealPrice
-        }
-    }
-    checkList.add(name)
-    Log.i("整点好的点击", "checkList = $checkList")
-
-    val dish = "${clickNum.value}. $name $realPrice 元"
-    //displayDish 可能含有日常随机菜肴，为避免混排，在第一次点击整点好的时必须将 displayDish 的值清空
-    displayDish.value = if (clickNum.value == 1) dish else {
-        displayDish.value + "\n\n$dish"
+    while (displayList.contains(randomDish)) {
+        //包含就重新生成，不包含就跳出
+        randomDish = randomDish(aMoreExpensiveDishes)
     }
 
-    //第一次点击，totalPrice 可能含有日常随机菜肴的值，必须先清除，但第二次以上就不能。
-    if (clickNum.value == 1) totalPrice.value = 0
-    totalPrice.value += realPrice
+    displayList.add(randomDish)
+    getDisplayValue(displayList, displayDish, totalPrice)
 }
+
+fun getDisplayValue(
+    displayList: MutableList<String>,
+    displayDish: MutableState<String>,
+    totalPrice: MutableState<Int>
+) {
+    Log.i("展示菜肴列表", "displayList = $displayList")
+    val builder = StringBuilder()
+    var total = 0
+
+    if (displayList.size == 1) {
+        val (name, realPrice) = splitToDish(displayList.first())
+        displayDish.value = "$name $realPrice 元"
+        totalPrice.value = realPrice
+    } else {
+        displayList.forEachIndexed { index, s ->
+            val (name, realPrice) = splitToDish(s)
+            builder.append("${index + 1}. $name $realPrice 元\n\n")
+            total += realPrice
+        }
+
+        displayDish.value = builder.toString().dropLast(2)
+        totalPrice.value = total
+    }
+}
+
+//@Composable
+//fun ExpensiveDishButtonRow(
+//    clickNum: MutableState<Int>,
+//    displayDish: MutableState<String>,
+//    totalPrice: MutableState<Int>,
+//    displayList: MutableList<String>
+//) {
+//    Row {
+//        IconButton(
+//            onClick = { restart(clickNum, displayDish, totalPrice, displayList) },
+//            modifier = Modifier.padding(0.dp, 0.dp, 10.dp, 0.dp),
+//            enabled = clickNum.value > 0
+//        ) {
+//            Icon(
+//                painter = painterResource(R.drawable.start_over),
+//                contentDescription = null,
+//                modifier = Modifier.size(24.dp),
+//                tint = Color(1, 148, 7, 255)
+//            )
+//        }
+//
+//    }
+//}
+
+//private fun restart(
+//    clickNum: MutableState<Int>,
+//    displayDish: MutableState<String>,
+//    totalPrice: MutableState<Int>,
+//    displayList: MutableList<String>
+//) {
+//    clickNum.value = clickNumDefaultValue
+//    displayDish.value = displayDishDefaultValue
+//    totalPrice.value = 0
+//    displayList.clear()
+//}
