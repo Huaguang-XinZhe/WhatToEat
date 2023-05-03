@@ -149,6 +149,7 @@ fun RandomButtonRow(
     allowClick: MutableState<Boolean>
 ) {
     val context = LocalContext.current
+    val expensiveDishList = mutableListOf<Boolean>()
 
     Row(
         modifier = Modifier.padding(0.dp, 25.dp, 0.dp, 0.dp)
@@ -156,7 +157,7 @@ fun RandomButtonRow(
         Button(
             onClick = {
                 updateDish(false, displayDish,
-                    totalPrice, displayList, context, allowClick)
+                    totalPrice, displayList, context, allowClick, expensiveDishList)
             },
             enabled = allowClick.value
         ) {
@@ -168,7 +169,7 @@ fun RandomButtonRow(
         Button(
             onClick = {
                 updateDish(true, displayDish,
-                    totalPrice, displayList, context, allowClick)
+                    totalPrice, displayList, context, allowClick, expensiveDishList)
             },
             enabled = allowClick.value
         ) {
@@ -183,9 +184,19 @@ fun updateDish(
     totalPrice: MutableState<Int>,
     displayList: MutableList<String>,
     context: Context,
-    allowClick: MutableState<Boolean>
+    allowClick: MutableState<Boolean>,
+    expensiveDishList: MutableList<Boolean>
 ) {
-    val dishList = if (isExpensive) aMoreExpensiveDishes else regularDishes
+    val dishList: List<String>
+
+    if (isExpensive) {
+        dishList = aMoreExpensiveDishes
+        expensiveDishList.add(true)
+    } else {
+        dishList = regularDishes
+        expensiveDishList.add(false)
+    }
+
     var randomDish = randomDish(dishList)
 
     while (displayList.contains(randomDish)) {
@@ -194,7 +205,7 @@ fun updateDish(
 
     if (displayList.size < 10) {
         displayList.add(randomDish)
-        getDisplayValue(displayList, displayDish, totalPrice)
+        getDisplayValue(displayList, displayDish, totalPrice, expensiveDishList)
     } else {
         allowClick.value = false
         Toast.makeText(context, "都点了 10 道菜了，还吃？",
@@ -206,26 +217,23 @@ fun updateDish(
 fun getDisplayValue(
     displayList: MutableList<String>,
     displayDish: MutableState<String>,
-    totalPrice: MutableState<Int>
+    totalPrice: MutableState<Int>,
+    expensiveDishList: MutableList<Boolean>
 ) {
-    Log.i("展示菜肴列表", "displayList = $displayList")
+    Log.i("吃什么？", "displayList = $displayList")
+    Log.i("吃什么？", "expensiveDishList = $expensiveDishList")
     val builder = StringBuilder()
     var total = 0
 
-    if (displayList.size == 1) {
-        val (name, realPrice) = splitToDish(displayList.first())
-        displayDish.value = "$name $realPrice 元"
-        totalPrice.value = realPrice
-    } else {
-        displayList.forEachIndexed { index, s ->
-            val (name, realPrice) = splitToDish(s)
-            builder.append("${index + 1}. $name $realPrice 元\n\n")
-            total += realPrice
-        }
-
-        displayDish.value = builder.toString().dropLast(2)
-        totalPrice.value = total
+    displayList.forEachIndexed { index, s ->
+        val (name, realPrice) = splitToDish(s)
+        val emoji = if (expensiveDishList[index]) "\uD83D\uDD25" else ""
+        builder.append("${index + 1}. $name $realPrice 元$emoji\n\n")
+        total += realPrice
     }
+
+    displayDish.value = builder.toString().dropLast(2)
+    totalPrice.value = total
 }
 
 //@Composable
