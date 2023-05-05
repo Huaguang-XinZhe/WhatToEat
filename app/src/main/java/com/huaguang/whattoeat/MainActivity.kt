@@ -18,6 +18,8 @@ class MainActivity : ComponentActivity() {
         //以上方法比这个方法要好，它实现了兼容（下面的方法只能用于 API 30 以上的手机）
 //        window.setDecorFitsSystemWindows(false)
 
+        val spHelper = SPHelper(this)
+
         setContent {
             AppContent()
         }

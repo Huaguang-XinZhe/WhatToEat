@@ -60,6 +60,12 @@ dependencies {
     //外部依赖
     //使用compose修改系统ui
     implementation 'com.google.accompanist:accompanist-systemuicontroller:0.31.1-alpha'
+//    //缺少material库
+//    implementation 'androidx.compose.material:material'
+    //下拉刷新库（使用复合构建，settings.gradle文件中还有配置）
+    implementation "me.omico.lux:lux-androidx-compose-material3-pullrefresh"
+//    //Toasty 库（需要引入 jitpack 仓库）
+//    implementation 'com.github.GrenderG:Toasty:1.5.2'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
