@@ -1,29 +1,20 @@
 package com.huaguang.whattoeat
 
-import android.annotation.SuppressLint
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pullrefresh.PullRefreshIndicator
 import androidx.compose.material3.pullrefresh.pullRefresh
 import androidx.compose.material3.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,13 +23,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -85,94 +77,130 @@ fun SwipeToRefreshTest(
     }
 }
 
-
-
-@Composable
-fun TopToast(
-    message: String,
-    showToast: MutableState<Boolean>,
-    durationMillis: Long = 3000L,
-    onDismiss: () -> Unit
-) {
-    val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(showToast.value) {
-        if (showToast.value) {
-            coroutineScope.launch {
-                delay(durationMillis)
-                onDismiss()
-            }
-        }
-    }
-
-    if (showToast.value) {
-        val enterTransition = remember { slideInVertically(initialOffsetY = { -it }) }
-        val exitTransition = remember { slideOutVertically(targetOffsetY = { -it }) }
-
-        AnimatedVisibility(
-            visible = showToast.value,
-            enter = enterTransition,
-            exit = exitTransition
-        ) {
-            Surface(
-                modifier = Modifier
-                    .padding(horizontal = 15.dp, vertical = getStatusBarHeight())
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                color = MaterialTheme.colorScheme.error,
-                shape = RoundedCornerShape(10.dp),
-                shadowElevation = 4.dp
-            ) {
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 15.dp),
-                    color = MaterialTheme.colorScheme.onError
-                )
-            }
-        }
+sealed class Screen2(val route: String) {
+    object ScreenA : Screen2("screen_a")
+    object ScreenB : Screen2("screen_b/{value}") {
+        fun createRoute(value: String) = "screen_b/$value"
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun MainScreen() {
-    val showToast = remember { mutableStateOf(false) }
+fun MyApp() {
+    val navController = rememberNavController()
 
+    NavHost(navController, startDestination = Screen2.ScreenA.route) {
+        composable(Screen2.ScreenA.route) {
+            ScreenA(navController)
+            Log.i("吃什么？", "ScreenA：执行！")
+        }
+        composable(Screen2.ScreenB.route) { backStackEntry ->
+            val value = backStackEntry.arguments?.getString("value")
+            ScreenB(navController, value)
+            Log.i("吃什么？", "ScreenB：执行！")
+        }
+    }
+}
+
+
+@Composable
+fun ScreenA(navController: NavController) {
     Column(
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.Center
     ) {
-        TopToast("This is a top toast", showToast) {
-            showToast.value = false
+        Text("这是页面 A")
+        Button(onClick = {
+            navController.navigate(Screen2.ScreenB.createRoute("你好，页面 B！"))
+        }) {
+            Text("跳转到页面 B")
         }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Button(onClick = { showToast.value = true }) {
-            Text("Show Top Toast")
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
-
-@SuppressLint("InternalInsetResource", "DiscouragedApi")
 @Composable
-fun getStatusBarHeight(): Dp {
-    val context = LocalContext.current
-    val resourceId = context.resources.getIdentifier(
-        "status_bar_height", "dimen", "android"
-    )
-    val statusBarHeightPixels = if (resourceId > 0) {
-        context.resources.getDimensionPixelSize(resourceId)
-    } else 0
-
-    return with(LocalDensity.current) {
-        statusBarHeightPixels.toDp()
+fun ScreenB(navController: NavController, value: String?) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("这是页面 B")
+        Text("接收到的参数值: $value")
+        Button(onClick = { navController.popBackStack() }) {
+            Text("返回页面 A")
+        }
     }
 }
+
+
+
+//@OptIn(ExperimentalMaterialApi::class)
+//@Composable
+//fun SwipeToDeleteItem2(
+//    item: String,
+//    onItemDeleted: () -> Unit
+//) {
+//    val context = LocalContext.current
+//    val vibrator = context.getSystemService(Vibrator::class.java) as Vibrator
+//    var hasVibrated by remember { mutableStateOf(false) }
+//
+//    val dismissState = rememberDismissState()
+//
+//    fun vibrate() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            vibrator.vibrate(
+//                VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE)
+//            )
+//        } else {
+//            @Suppress("DEPRECATION")
+//            vibrator.vibrate(200)
+//        }
+//    }
+//
+//    SwipeToDismiss(
+//        state = dismissState,
+//        directions = setOf(DismissDirection.StartToEnd, DismissDirection.EndToStart),
+//        background = {
+//            val color = when (dismissState.dismissDirection) {
+//                DismissDirection.StartToEnd -> MaterialTheme.colors.error
+//                DismissDirection.EndToStart -> MaterialTheme.colors.error
+//                else -> MaterialTheme.colors.surface
+//            }
+//
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(color)
+//            )
+//        },
+//        dismissContent = {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(Color.White)
+//            ) {
+//                Text(text = item, Modifier.padding(16.dp))
+//            }
+//        },
+//        onDismissed = { onItemDeleted() }
+//    )
+//
+//    LaunchedEffect(dismissState.currentValue) {
+//        if (dismissState.currentValue != DismissValue.Default && !hasVibrated) {
+//            vibrate()
+//            hasVibrated = true
+//        } else if (dismissState.currentValue == DismissValue.Default) {
+//            hasVibrated = false
+//        }
+//    }
+//}
+
+
+
+
+
+
+
 
 
 
