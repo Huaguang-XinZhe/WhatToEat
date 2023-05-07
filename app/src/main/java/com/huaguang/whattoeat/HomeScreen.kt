@@ -35,10 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
 
@@ -108,12 +109,15 @@ fun splitToDish(randomDish: String): Dish {
 }
 
 
-@Preview(showBackground = true)
+
 @Composable
-fun WhatToEat() {
+fun HomeScreen(
+    dishesScreenArgs: MutableState<Pair<String, Int>?>,
+    setDishesScreenArgs: (Pair<String, Int>?) -> Unit
+) {
     val displayDish = remember { mutableStateOf(displayDishDefaultValue) }
     val totalPrice = remember { mutableStateOf(0) }
-    val displayList = mutableListOf<String>()
+    val displayList = remember { mutableListOf<String>() }
     val allowClick = remember { mutableStateOf(true) }
     val aDishMode = remember { mutableStateOf(true) }
     val modeText = remember { mutableStateOf("日常单品") }
@@ -158,8 +162,8 @@ fun WhatToEat() {
                     allowClick, aDishMode, context, bbClickState)
             }
             item {
-                ConfirmButton(bottomButtonText, displayList, aDishMode,
-                    displayDish, totalPrice, context, allowClick, bbClickState)
+                ConfirmButton(bottomButtonText, displayList, aDishMode, displayDish, totalPrice,
+                    context, allowClick, bbClickState, dishesScreenArgs, setDishesScreenArgs)
             }
         }
 
@@ -248,12 +252,14 @@ fun ConfirmButton(
     totalPrice: MutableState<Int>,
     context: Context,
     allowClick: MutableState<Boolean>,
-    bbClickState: MutableState<Boolean>
+    bbClickState: MutableState<Boolean>,
+    dishesScreenArgs: MutableState<Pair<String, Int>?>,
+    setDishesScreenArgs: (Pair<String, Int>?) -> Unit
 ) {
     OutlinedButton(
         onClick = {
-            execute(displayList, aDishMode, bottomButtonText,
-                bbClickState, displayDish, totalPrice, context, allowClick)
+            execute(displayList, aDishMode, bottomButtonText, bbClickState, displayDish,
+                totalPrice, context, allowClick, dishesScreenArgs, setDishesScreenArgs)
         },
         modifier = Modifier
             .padding(0.dp, 20.dp, 0.dp, 0.dp)
@@ -272,13 +278,21 @@ fun execute(
     displayDish: MutableState<String>,
     totalPrice: MutableState<Int>,
     context: Context,
-    allowClick: MutableState<Boolean>
+    allowClick: MutableState<Boolean>,
+    dishesScreenArgs: MutableState<Pair<String, Int>?>,
+    setDishesScreenArgs: (Pair<String, Int>?) -> Unit
 ) {
     //注意，这里必须用 when，分开用 if 的话，它会连续执行，而 when 就不会，如果找到匹配的，那它执行完就退出了！
     when (bottomButtonText.value) {
         "确认" -> {
             // 在这里执行确认逻辑
-            // TODO: 这里将数据传到统计页面
+
+            val dishes = getDishes(displayList)
+            val totalExpense = getTotalExpense(totalPrice)
+            // 只传参不导航
+            val dishesJson = Json.encodeToString(dishes)
+            setDishesScreenArgs(dishesJson to 100) // 更新参数值
+
             allowClick.value = false
 
             if (aDishMode.value) {
@@ -299,6 +313,26 @@ fun execute(
             bbClickState.value = false
         }
     }
+}
+
+fun getTotalExpense(totalPrice: MutableState<Int>): Int {
+    // TODO:  从本地把上个 totalExpense 取出来
+    var totalExpense = 0
+    totalExpense += totalPrice.value
+
+    return totalExpense
+}
+
+fun getDishes(displayList: MutableList<String>): List<DishInfo> {
+    val list = mutableListOf<DishInfo>()
+
+    displayList.forEach { randomDish ->
+        val (name, _) = splitToDish(randomDish)
+        // TODO:  根据 name，从数据库取值——这道菜所吃的总次数
+        list.add(DishInfo(name, 1))
+    }
+
+    return list
 }
 
 fun copyToClipboard(context: Context, text: String) {
