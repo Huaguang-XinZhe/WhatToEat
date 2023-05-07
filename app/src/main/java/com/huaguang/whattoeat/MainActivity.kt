@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.List
@@ -23,8 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -88,12 +91,12 @@ fun AppContent() {
         IconInfo(Icons.Rounded.Home, "主页"),
         IconInfo(Icons.Rounded.List, "菜单")
     )
-
     val navController = rememberNavController()
     val dishesScreenArgs = remember { mutableStateOf<Pair<String, Int>?>(null) }
     val setDishesScreenArgs: (Pair<String, Int>?) -> Unit = { newValue ->
         dishesScreenArgs.value = newValue
     }
+    val bottomNavigationHeight = 56.dp
 
     SideEffect {
         // 设置状态栏图标和文字颜色
@@ -105,6 +108,9 @@ fun AppContent() {
 
     // 你的其他 UI 代码...
     Scaffold(
+        modifier = Modifier.padding(
+            top = getStatusBarHeight()
+        ),
         bottomBar = {
             NavigationBar {
                 iconList.forEachIndexed { index, iconInfo ->
@@ -136,14 +142,16 @@ fun AppContent() {
                             )
                         }
                     )
-
-
                 }
             }
         }
-    ) {
+    ) { paddingValues ->
         //注意，如果有 Scaffold 存在的话，NavHost 必须放在其中，否则跳转页不会显示
-        NavHost(navController, startDestination = Screen.HomeScreen.route) {
+        NavHost(
+            navController = navController,
+            startDestination = Screen.HomeScreen.route,
+            modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
+        ) {
             composable(Screen.HomeScreen.route) {
                 HomeScreen(setDishesScreenArgs)
 
