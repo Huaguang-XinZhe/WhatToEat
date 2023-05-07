@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -112,7 +111,6 @@ fun splitToDish(randomDish: String): Dish {
 
 @Composable
 fun HomeScreen(
-    dishesScreenArgs: MutableState<Pair<String, Int>?>,
     setDishesScreenArgs: (Pair<String, Int>?) -> Unit
 ) {
     val displayDish = remember { mutableStateOf(displayDishDefaultValue) }
@@ -120,7 +118,7 @@ fun HomeScreen(
     val displayList = remember { mutableListOf<String>() }
     val allowClick = remember { mutableStateOf(true) }
     val aDishMode = remember { mutableStateOf(true) }
-    val modeText = remember { mutableStateOf("日常单品") }
+    val modeText = remember { mutableStateOf("日常一菜") }
     val bottomButtonText = remember { mutableStateOf("确认") }
     val bbClickState = remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -163,7 +161,7 @@ fun HomeScreen(
             }
             item {
                 ConfirmButton(bottomButtonText, displayList, aDishMode, displayDish, totalPrice,
-                    context, allowClick, bbClickState, dishesScreenArgs, setDishesScreenArgs)
+                    context, allowClick, bbClickState, setDishesScreenArgs)
             }
         }
 
@@ -172,18 +170,18 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun RefreshTip(tip: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(0.dp, 25.dp, 0.dp, 0.dp),
-        //注意，这行代码必须设置宽度才会生效
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Text(tip)
-    }
-}
+//@Composable
+//fun RefreshTip(tip: String) {
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(0.dp, 25.dp, 0.dp, 0.dp),
+//        //注意，这行代码必须设置宽度才会生效
+//        horizontalArrangement = Arrangement.Center
+//    ) {
+//        Text(tip)
+//    }
+//}
 
 @Composable
 fun TopRow(
@@ -253,13 +251,12 @@ fun ConfirmButton(
     context: Context,
     allowClick: MutableState<Boolean>,
     bbClickState: MutableState<Boolean>,
-    dishesScreenArgs: MutableState<Pair<String, Int>?>,
     setDishesScreenArgs: (Pair<String, Int>?) -> Unit
 ) {
     OutlinedButton(
         onClick = {
             execute(displayList, aDishMode, bottomButtonText, bbClickState, displayDish,
-                totalPrice, context, allowClick, dishesScreenArgs, setDishesScreenArgs)
+                totalPrice, context, allowClick, setDishesScreenArgs)
         },
         modifier = Modifier
             .padding(0.dp, 20.dp, 0.dp, 0.dp)
@@ -279,19 +276,17 @@ fun execute(
     totalPrice: MutableState<Int>,
     context: Context,
     allowClick: MutableState<Boolean>,
-    dishesScreenArgs: MutableState<Pair<String, Int>?>,
     setDishesScreenArgs: (Pair<String, Int>?) -> Unit
 ) {
     //注意，这里必须用 when，分开用 if 的话，它会连续执行，而 when 就不会，如果找到匹配的，那它执行完就退出了！
     when (bottomButtonText.value) {
         "确认" -> {
             // 在这里执行确认逻辑
-
-            val dishes = getDishes(displayList)
+            val dishes = getDishes(displayList, aDishMode)
             val totalExpense = getTotalExpense(totalPrice)
             // 只传参不导航
             val dishesJson = Json.encodeToString(dishes)
-            setDishesScreenArgs(dishesJson to 100) // 更新参数值
+            setDishesScreenArgs(dishesJson to totalExpense) // 更新参数值
 
             allowClick.value = false
 
@@ -323,13 +318,26 @@ fun getTotalExpense(totalPrice: MutableState<Int>): Int {
     return totalExpense
 }
 
-fun getDishes(displayList: MutableList<String>): List<DishInfo> {
+fun getDishes(
+    displayList: MutableList<String>,
+    aDishMode: MutableState<Boolean>
+): List<DishInfo> {
     val list = mutableListOf<DishInfo>()
 
-    displayList.forEach { randomDish ->
-        val (name, _) = splitToDish(randomDish)
+    fun String.addIn(list: MutableList<DishInfo>) {
+        val name = this.split(" ")[0]
         // TODO:  根据 name，从数据库取值——这道菜所吃的总次数
         list.add(DishInfo(name, 1))
+    }
+
+    if (aDishMode.value) {
+        // 日常一菜模式，只取 displayList 中最后一个元素
+        val dish = displayList.last()
+        dish.addIn(list)
+    } else {
+        displayList.forEach { randomDish ->
+            randomDish.addIn(list)
+        }
     }
 
     return list
@@ -432,6 +440,9 @@ fun updateDish(
         val (name, realPrice) = splitToDish(randomDish)
         displayDish.value = "$name $realPrice 元"
         totalPrice.value = realPrice
+
+        // 即使是日常一菜也要加入 displayList
+        displayList.add(randomDish)
         return
     }
 

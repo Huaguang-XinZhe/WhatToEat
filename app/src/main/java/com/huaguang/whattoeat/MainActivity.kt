@@ -145,7 +145,7 @@ fun AppContent() {
         //注意，如果有 Scaffold 存在的话，NavHost 必须放在其中，否则跳转页不会显示
         NavHost(navController, startDestination = Screen.HomeScreen.route) {
             composable(Screen.HomeScreen.route) {
-                HomeScreen(dishesScreenArgs, setDishesScreenArgs)
+                HomeScreen(setDishesScreenArgs)
 
                 selectedState.value = 0
             }
