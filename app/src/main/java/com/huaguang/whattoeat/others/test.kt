@@ -1,4 +1,4 @@
-package com.huaguang.whattoeat
+package com.huaguang.whattoeat.others
 
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement

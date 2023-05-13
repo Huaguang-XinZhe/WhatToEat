@@ -1,4 +1,4 @@
-package com.huaguang.whattoeat
+package com.huaguang.whattoeat.utils
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -7,6 +7,10 @@ import java.util.Date
 class SPHelper(context: Context) {
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("WhatToEatPrefs", Context.MODE_PRIVATE)
+
+    var totalExpense: Int
+        get() = sharedPreferences.getInt("KEY_TOTAL_EXPENSE", 0)
+        set(value) = sharedPreferences.edit().putInt("KEY_TOTAL_EXPENSE", value).apply()
 
     var isCodeExecuted: Boolean
         get() = sharedPreferences.getBoolean("KEY_CODE_EXECUTED", false)

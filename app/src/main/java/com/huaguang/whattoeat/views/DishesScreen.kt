@@ -1,4 +1,4 @@
-package com.huaguang.whattoeat
+package com.huaguang.whattoeat.screens
 
 
 import androidx.compose.foundation.layout.Row
@@ -24,13 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class DishInfo(
-    val name: String,
-    var eatenTimes: Int
-)
+import com.huaguang.whattoeat.data.DishInfo
 
 @Composable
 fun DishesScreen(
@@ -110,7 +104,7 @@ fun DishRow(dish: DishInfo) {
         }
 
         IconButton(
-            onClick = { deleteItem(dish) }
+            onClick = { /**/ }
         ) {
             Icon(
                 imageVector = Icons.Filled.Delete,
@@ -120,11 +114,6 @@ fun DishRow(dish: DishInfo) {
         }
     }
 }
-
-fun deleteItem(dish: DishInfo) {
-    TODO("Not yet implemented")
-}
-
 
 @Composable
 fun Summary(
@@ -147,95 +136,3 @@ fun Summary(
         Text("总消费: $totalExpense")
     }
 }
-
-
-
-//@OptIn(ExperimentalMaterialApi::class)
-//@Composable
-//fun DishList(
-//    dishes: List<DishInfo>,
-//    onRemove: (DishInfo) -> Unit
-//) {
-//    Box(
-//        modifier = Modifier.fillMaxSize().background(Color.LightGray)
-//    ) {
-//        LazyColumn(
-//            modifier = Modifier
-//                .align(Alignment.Center)
-//                .padding(35.dp),
-//            verticalArrangement = Arrangement.spacedBy(5.dp)
-//        ) {
-//            items(dishes) { dish ->
-//                val dismissState = rememberDismissState()
-//                val isRemoved = remember { mutableStateOf(false) }
-//
-//                SwipeToDismiss(
-//                    state = dismissState,
-//                    directions = setOf(DismissDirection.StartToEnd, DismissDirection.EndToStart),
-//                    background = {
-////                        val color = when (dismissState.dismissDirection) {
-////                            DismissDirection.StartToEnd -> MaterialTheme.colorScheme.error
-////                            DismissDirection.EndToStart -> MaterialTheme.colorScheme.error
-////                            else -> MaterialTheme.colorScheme.surface
-////                        }
-////
-////                        Card(
-////                            modifier = Modifier
-////                                .fillMaxSize()
-////                                .padding(8.dp),
-////                            elevation = 8.dp,
-////                            shape = RoundedCornerShape(8.dp),
-////                            backgroundColor = color
-////                        ) {
-////                            Box(modifier = Modifier.fillMaxSize()) {
-////                                DishRow(dish)
-////                            }
-////                        }
-//                    },
-//                    dismissContent = {
-//                        Box(
-//                            modifier = Modifier
-//                                .fillMaxSize()
-//                                .offset(x = dismissState.offset.value.dp)
-//                                .padding(8.dp)
-//                        ) {
-//                            DishRow(dish)
-//                        }
-//                    }
-//                )
-//
-//                LaunchedEffect(dismissState.currentValue) {
-//                    if (dismissState.currentValue != DismissValue.Default
-//                        && dismissState.isAnimationRunning.not()) {
-//                        isRemoved.value = true
-//                        onRemove(dish)
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-
-
-
-
-
-
-//@Preview(showBackground = true)
-//@Composable
-//fun DishStatsManagement() {
-//    Column {
-////        Summary(
-////            dishes = currentDishesList,
-////            allDishesCount = allDishesList.size,
-////        )
-//
-//        DishList(
-//            dishes = currentDishesList,
-//            onRemove = { dish ->
-//                dish.isRemoved = true
-//                currentDishesList.remove(dish)
-//            }
-//        )
-//    }
-//}

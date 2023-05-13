@@ -27,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -36,6 +35,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.huaguang.whattoeat.data.AppDatabase
+import com.huaguang.whattoeat.data.DishInfo
+import com.huaguang.whattoeat.screens.DishesScreen
+import com.huaguang.whattoeat.utils.SPHelper
+import com.huaguang.whattoeat.views.HomeScreen
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
@@ -51,9 +55,10 @@ class MainActivity : ComponentActivity() {
 //        window.setDecorFitsSystemWindows(false)
 
         val spHelper = SPHelper(this)
+        val appDatabase = (application as MyApplication).appDatabase
 
         setContent {
-            AppContent()
+            AppContent(appDatabase, spHelper)
         }
     }
 
@@ -83,7 +88,7 @@ class MainActivity : ComponentActivity() {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppContent() {
+fun AppContent(appDatabase: AppDatabase, spHelper: SPHelper) {
     val systemUiController = rememberSystemUiController()
     val useDarkIcons = true
     val selectedState = remember { mutableStateOf(0) }
@@ -96,7 +101,6 @@ fun AppContent() {
     val setDishesScreenArgs: (Pair<String, Int>?) -> Unit = { newValue ->
         dishesScreenArgs.value = newValue
     }
-    val bottomNavigationHeight = 56.dp
 
     SideEffect {
         // 设置状态栏图标和文字颜色
@@ -153,7 +157,7 @@ fun AppContent() {
             modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
         ) {
             composable(Screen.HomeScreen.route) {
-                HomeScreen(setDishesScreenArgs)
+                HomeScreen(appDatabase, spHelper, setDishesScreenArgs)
 
                 selectedState.value = 0
             }
