@@ -66,31 +66,20 @@ dependencies {
     //下拉刷新库（使用复合构建，settings.gradle文件中还有配置）
     implementation "me.omico.lux:lux-androidx-compose-material3-pullrefresh"
     //ConstraintLayout 库
-    implementation 'androidx.constraintlayout:constraintlayout-compose:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout-compose:1.0.1'
     //navigation 组件
     implementation "androidx.navigation:navigation-compose:2.5.3"
     //序列化、反序列化 JSON 数据
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1'
     // Room components
-    def room_version = "2.4.2" // 请检查并使用最新的版本
+    def room_version = "2.5.0" // 请检查并使用最新的版本
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     // LiveData 相关库
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation "androidx.compose.runtime:runtime-livedata:1.4.3"
-
-//    // Room 对挂起函数的支持有限，故使用 Flow 解决该问题（引入协程相关库）
-//    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
-//    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-
-
-//    //下拉刷新库
-//    implementation 'com.google.accompanist:accompanist-swiperefresh:0.31.1-alpha'
-    //缺少material库
-    //    //Toasty 库（需要引入 jitpack 仓库）
-//    implementation 'com.github.GrenderG:Toasty:1.5.2'
-
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.4.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
@@ -100,5 +89,7 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
 
+    //郭神的数据库可视化库——Glance
+    debugImplementation 'com.guolindev.glance:glance:1.1.0'
 
 }

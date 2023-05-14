@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
@@ -17,9 +16,9 @@ import com.huaguang.whattoeat.displayDishDefaultValue
 import com.huaguang.whattoeat.regularDishes
 import com.huaguang.whattoeat.utils.SPHelper
 import com.huaguang.whattoeat.utils.copyToClipboard
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
 
 class HomeScreenViewModel(
@@ -118,22 +117,15 @@ class HomeScreenViewModel(
      */
     private suspend fun MutableLiveData<List<DishInfo>>.setDishes() {
         val list = mutableListOf<DishInfo>()
+        val dishRepository = DishRepository(appDatabase)
 
-        suspend fun String.addIn() = suspendCoroutine { cont ->
-            val name = this.split(" ")[0]
-            val dishRepository = DishRepository(appDatabase)
-            val eatenTimesLiveData: LiveData<Int> = dishRepository.getEatenTimesForDish(name)
-
-            lateinit var observer: Observer<Int>
-            observer = Observer { eatenTimes ->
-                list.add(DishInfo(name, eatenTimes + 1))
-                Log.i("吃什么？", "setDishes addIn 中：list = $list")
-                Log.i("吃什么？", "setDishes addIn 中：displayList = $displayList")
-                value = list
-                eatenTimesLiveData.removeObserver(observer)
-                cont.resumeWith(Result.success(Unit))
-            }
-            eatenTimesLiveData.observeForever(observer)
+        suspend fun String.addIn() = coroutineScope {
+            val name = split(" ")[0]
+            val updatedEatenTimes = dishRepository.updateEatenTimesForDish(name)
+            list.add(DishInfo(name, updatedEatenTimes))
+            Log.i("吃什么？", "setDishes addIn 中：list = $list")
+            Log.i("吃什么？", "setDishes addIn 中：displayList = $displayList")
+            value = list
         }
 
         if (aDishMode.value) {
@@ -209,7 +201,9 @@ class HomeScreenViewModel(
     }
 
     private fun getTotalExpense(): Int {
+        // 存下 totalExpense 数据
         var totalExpense = spHelper.totalExpense
+        // 得到新的 totalExpense 数据
         totalExpense += totalPrice.value
 
         return totalExpense
