@@ -1,8 +1,7 @@
-package com.huaguang.whattoeat
+package com.huaguang.whattoeat.data
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.map
-import com.huaguang.whattoeat.data.AppDatabase
 
 class DishRepository(private val appDatabase: AppDatabase) {
 

@@ -5,19 +5,21 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
-import com.huaguang.whattoeat.DishRepository
 import com.huaguang.whattoeat.aMoreExpensiveDishes
 import com.huaguang.whattoeat.data.AppDatabase
 import com.huaguang.whattoeat.data.Dish
 import com.huaguang.whattoeat.data.DishInfo
+import com.huaguang.whattoeat.data.DishRepository
 import com.huaguang.whattoeat.displayDishDefaultValue
 import com.huaguang.whattoeat.regularDishes
 import com.huaguang.whattoeat.utils.SPHelper
 import com.huaguang.whattoeat.utils.copyToClipboard
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
 
 class HomeScreenViewModel(
@@ -44,23 +46,36 @@ class HomeScreenViewModel(
         bottomButtonText.value = "确认"
     }
 
-
-    fun execute(
-        setDishesScreenArgs: (Pair<String, Int>?) -> Unit,
-        dishes: List<DishInfo>
+    suspend fun execute(
+        setDishesScreenArgs: (Pair<String, Int>?) -> Unit
     ): ((context: Context) -> Unit)? {
+        var totalExpense = 0
+        val dishesLiveData = MutableLiveData<List<DishInfo>>(emptyList())
+
+        // 创建 Observer
+        val dishesObserver = Observer<List<DishInfo>> { dishes ->
+            // 在这里，您可以访问更新后的 dishes 值
+            Log.i("吃什么？", "dishes = $dishes")
+            // 只传参不导航
+            val dishesJson = Json.encodeToString(dishes)
+            setDishesScreenArgs(dishesJson to totalExpense) // 更新参数值
+        }
+
+        // 观察 dishesLiveData
+        dishesLiveData.observeForever(dishesObserver)
+
+        // ... 其他逻辑
         Log.i("吃什么？", "execute 里面执行！！！")
         //注意，这里必须用 when，分开用 if 的话，它会连续执行，而 when 就不会，如果找到匹配的，那它执行完就退出了！
         when (bottomButtonText.value) {
             "确认" -> {
                 Log.i("吃什么？", "when 确认块执行")
                 // 在这里执行确认逻辑
-                Log.i("吃什么？", "dishes = $dishes")
-                val totalExpense = getTotalExpense()
+                totalExpense = getTotalExpense()
                 Log.i("吃什么？", "totalExpense = $totalExpense")
-                // 只传参不导航
-                val dishesJson = Json.encodeToString(dishes)
-                setDishesScreenArgs(dishesJson to totalExpense) // 更新参数值
+                // 调用 setDishes() 方法
+                dishesLiveData.setDishes()
+                Log.i("吃什么？", "execute 中：dishesLiveData.value = ${dishesLiveData.value}")
 
                 allowClick.value = false
 
@@ -91,10 +106,49 @@ class HomeScreenViewModel(
             }
         }
 
+        // 当您不再需要观察 dishesLiveData 时，移除观察者
+        dishesLiveData.removeObserver(dishesObserver)
+
         //这里还非写个 return 不可，不写会报错！
         return null
     }
 
+    /**
+     * 给被观察的 LiveData 设置新值，触发观察回调
+     */
+    private suspend fun MutableLiveData<List<DishInfo>>.setDishes() {
+        val list = mutableListOf<DishInfo>()
+
+        suspend fun String.addIn() = suspendCoroutine { cont ->
+            val name = this.split(" ")[0]
+            val dishRepository = DishRepository(appDatabase)
+            val eatenTimesLiveData: LiveData<Int> = dishRepository.getEatenTimesForDish(name)
+
+            lateinit var observer: Observer<Int>
+            observer = Observer { eatenTimes ->
+                list.add(DishInfo(name, eatenTimes + 1))
+                Log.i("吃什么？", "setDishes addIn 中：list = $list")
+                Log.i("吃什么？", "setDishes addIn 中：displayList = $displayList")
+                value = list
+                eatenTimesLiveData.removeObserver(observer)
+                cont.resumeWith(Result.success(Unit))
+            }
+            eatenTimesLiveData.observeForever(observer)
+        }
+
+        if (aDishMode.value) {
+            if (displayList.isNotEmpty()) {
+                val dish = displayList.last()
+                dish.addIn()
+                Log.i("吃什么？", "setDishes 中：value = $value")
+            }
+        } else {
+            Log.i("吃什么？", "displayList = $displayList")
+            for (randomDish in displayList) {
+                randomDish.addIn()
+            }
+        }
+    }
 
     fun updateDish(
         isExpensive: Boolean, //用于判别更新来自哪个按钮（是日常随机？还是整点好的？）
@@ -136,42 +190,6 @@ class HomeScreenViewModel(
         }
 
         return null
-    }
-
-    fun getDishes(): LiveData<List<DishInfo>> {
-        val mediatorLiveData = MediatorLiveData<List<DishInfo>>()
-        val list = mutableListOf<DishInfo>()
-
-        fun String.addIn() {
-            val name = this.split(" ")[0]
-            val dishRepository = DishRepository(appDatabase)
-            val eatenTimesLiveData: LiveData<Int> = dishRepository.getEatenTimesForDish(name)
-
-            mediatorLiveData.addSource(eatenTimesLiveData) { eatenTimes ->
-                list.add(DishInfo(name, eatenTimes))
-                Log.i("吃什么？", "list 前 = $list")
-
-                if (list.size == displayList.size) {
-                    Log.i("吃什么？", "if 块执行！")
-                    mediatorLiveData.value = list
-                }
-            }
-        }
-
-        if (aDishMode.value) {
-            if (displayList.isNotEmpty()) {
-                val dish = displayList.last()
-                dish.addIn()
-            }
-        } else {
-            Log.i("吃什么？", "displayList = $displayList")
-            displayList.forEach { randomDish ->
-                randomDish.addIn()
-            }
-            Log.i("吃什么？", "list = $list")
-        }
-
-        return mediatorLiveData
     }
 
 

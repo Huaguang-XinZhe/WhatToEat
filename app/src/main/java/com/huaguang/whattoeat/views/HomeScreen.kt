@@ -22,7 +22,6 @@ import androidx.compose.material3.pullrefresh.pullRefresh
 import androidx.compose.material3.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -37,6 +36,7 @@ import com.huaguang.whattoeat.data.AppDatabase
 import com.huaguang.whattoeat.utils.SPHelper
 import com.huaguang.whattoeat.viewModel.HomeScreenViewModel
 import com.huaguang.whattoeat.viewModel.HomeScreenViewModelFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -86,7 +86,7 @@ fun HomeScreen(
                 RandomButtonRow(context, viewModel)
             }
             item {
-                ConfirmButton(context, viewModel, setDishesScreenArgs)
+                ConfirmButton(context, viewModel, scope, setDishesScreenArgs)
             }
         }
 
@@ -177,16 +177,16 @@ fun TopRow(viewModel: HomeScreenViewModel) {
 fun ConfirmButton(
     context: Context,
     viewModel: HomeScreenViewModel,
+    scope: CoroutineScope,
     setDishesScreenArgs: (Pair<String, Int>?) -> Unit
 ) {
-    val dishesLiveData = viewModel.getDishes()
-    val dishes by dishesLiveData.observeAsState(emptyList())
-
     OutlinedButton(
         onClick = {
-            // 调用 execute()，并获取返回的函数（如果有的话）
-            val contextAction = viewModel.execute(setDishesScreenArgs, dishes)
-            contextAction?.invoke(context)
+            scope.launch {
+                // 调用 execute()，并获取返回的函数（如果有的话）
+                val contextAction = viewModel.execute(setDishesScreenArgs)
+                contextAction?.invoke(context)
+            }
         },
         modifier = Modifier
             .padding(0.dp, 20.dp, 0.dp, 0.dp)
