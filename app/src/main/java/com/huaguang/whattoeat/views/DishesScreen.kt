@@ -17,26 +17,23 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import com.huaguang.whattoeat.MyApplication
 import com.huaguang.whattoeat.data.DishInfo
+import com.huaguang.whattoeat.viewModel.DishesScreenViewModel
 
 @Composable
 fun DishesScreen(
-    myApplication: MyApplication,
+    viewModel: DishesScreenViewModel,
     highlightDishes: List<DishInfo>,
     totalExpense: Int
 ) {
-
-    val viewModel = myApplication.dishesScreenViewModel
-    val menuData by viewModel.menuData.observeAsState(emptyList())
+    viewModel.highlightDishes.value = highlightDishes
+    viewModel.totalExpense = totalExpense
 
     ConstraintLayout(
         modifier = Modifier.fillMaxSize()
@@ -44,8 +41,7 @@ fun DishesScreen(
         val (summaryRef, dishListRef) = createRefs()
 
         Summary(
-            dishes = menuData,
-            totalExpense = totalExpense,
+            viewModel = viewModel,
             modifier = Modifier.constrainAs(summaryRef) {
                 start.linkTo(parent.start, 20.dp)
                 top.linkTo(parent.top, 55.dp)
@@ -53,8 +49,7 @@ fun DishesScreen(
         )
 
         DishList(
-            dishes = menuData,
-            highlightDishes = highlightDishes,
+            viewModel = viewModel,
             modifier = Modifier.constrainAs(dishListRef) {
                 start.linkTo(parent.start, 20.dp)
                 end.linkTo(parent.end, 20.dp)
@@ -67,24 +62,13 @@ fun DishesScreen(
 
 @Composable
 fun DishList(
-    dishes: List<DishInfo>,
-    highlightDishes: List<DishInfo>,
+    viewModel: DishesScreenViewModel,
     modifier: Modifier
 ) {
-    // 创建一个新的菜单列表，其中包含更新后的 eatenTimes 值
-    val updatedDishes = dishes.map { dish ->
-        val highlightDish = highlightDishes.find { it.name == dish.name }
-        if (highlightDish != null) {
-            DishInfo(dish.name, highlightDish.eatenTimes)
-        } else {
-            dish
-        }
-    }
-
     LazyColumn(
         modifier = modifier
     ) {
-        items(updatedDishes) { dish ->
+        items(viewModel.getUpdateDishes()) { dish ->
             DishRow(dish)
         }
     }
@@ -135,22 +119,16 @@ fun DishRow(dish: DishInfo) {
 
 @Composable
 fun Summary(
-    dishes: List<DishInfo>,
-    totalExpense: Int,
+    viewModel: DishesScreenViewModel,
     modifier: Modifier
 ) {
-    val currentDishesCount = dishes.count()
-    val totalEaten = dishes.count { it.eatenTimes > 0 }
-    val finishedRate = if (currentDishesCount > 0)
-        totalEaten / currentDishesCount.toFloat() * 100 else 0f
-
     Row(
         modifier = modifier
     ) {
-        Text("完吃率: ${finishedRate.toInt()}%")
+        Text("完吃率: ${viewModel.calFinishedRate()}%")
 
         Spacer(modifier = Modifier.width(25.dp))
 
-        Text("总消费: $totalExpense")
+        Text("总消费: ${viewModel.totalExpense}")
     }
 }

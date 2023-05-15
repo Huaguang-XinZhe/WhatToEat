@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppContent(myApplication: MyApplication, spHelper: SPHelper) {
     val appDatabase = myApplication.appDatabase
+    val viewModel = myApplication.dishesScreenViewModel
 
     val systemUiController = rememberSystemUiController()
     val useDarkIcons = true
@@ -172,7 +173,7 @@ fun AppContent(myApplication: MyApplication, spHelper: SPHelper) {
                 val highlightDishes = dishesJson.let { Json.decodeFromString<List<DishInfo>>(it) }
                 val totalExpense = backStackEntry.arguments?.getInt("totalExpense") ?: 0
 
-                DishesScreen(myApplication, highlightDishes, totalExpense)
+                DishesScreen(viewModel, highlightDishes, totalExpense)
 
                 selectedState.value = 1
             }
