@@ -20,4 +20,7 @@ interface DishInfoDao {
     @Insert
     suspend fun insertDishInfo(dishInfo: DishInfo): Long
 
+    @Query("SELECT * FROM dish_info")
+    suspend fun getAllDishInfo(): List<DishInfo>
+
 }

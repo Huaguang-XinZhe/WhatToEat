@@ -35,12 +35,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.huaguang.whattoeat.data.AppDatabase
 import com.huaguang.whattoeat.data.DishInfo
-import com.huaguang.whattoeat.screens.DishesScreen
 import com.huaguang.whattoeat.utils.SPHelper
+import com.huaguang.whattoeat.views.DishesScreen
 import com.huaguang.whattoeat.views.HomeScreen
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 class MainActivity : ComponentActivity() {
@@ -55,10 +53,10 @@ class MainActivity : ComponentActivity() {
 //        window.setDecorFitsSystemWindows(false)
 
         val spHelper = SPHelper(this)
-        val appDatabase = (application as MyApplication).appDatabase
+        val myApplication = applicationContext as MyApplication
 
         setContent {
-            AppContent(appDatabase, spHelper)
+            AppContent(myApplication, spHelper)
         }
     }
 
@@ -88,7 +86,9 @@ class MainActivity : ComponentActivity() {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppContent(appDatabase: AppDatabase, spHelper: SPHelper) {
+fun AppContent(myApplication: MyApplication, spHelper: SPHelper) {
+    val appDatabase = myApplication.appDatabase
+
     val systemUiController = rememberSystemUiController()
     val useDarkIcons = true
     val selectedState = remember { mutableStateOf(0) }
@@ -125,8 +125,8 @@ fun AppContent(appDatabase: AppDatabase, spHelper: SPHelper) {
 
                             val route = if (index == 1) {
                                 if (dishesScreenArgs.value != null) {
-                                    val (dishes, totalExpense) = dishesScreenArgs.value!!
-                                    Screen.DishesScreen.createRoute(dishes, totalExpense)
+                                    val (highlightDishes, totalExpense) = dishesScreenArgs.value!!
+                                    Screen.DishesScreen.createRoute(highlightDishes, totalExpense)
                                 } else {
                                     Screen.DishesScreen.createRoute()// 使用默认值
                                 }
@@ -164,15 +164,15 @@ fun AppContent(appDatabase: AppDatabase, spHelper: SPHelper) {
             composable(
                 route = Screen.DishesScreen.route,
                 arguments = listOf(
-                    navArgument("dishes") { type = NavType.StringType },
+                    navArgument("highlightDishes") { type = NavType.StringType },
                     navArgument("totalExpense") { type = NavType.IntType }
                 )
             ) { backStackEntry ->
-                val dishesJson = backStackEntry.arguments?.getString("dishes") ?: ""
-                val dishes = dishesJson.let { Json.decodeFromString<List<DishInfo>>(it) }
+                val dishesJson = backStackEntry.arguments?.getString("highlightDishes") ?: ""
+                val highlightDishes = dishesJson.let { Json.decodeFromString<List<DishInfo>>(it) }
                 val totalExpense = backStackEntry.arguments?.getInt("totalExpense") ?: 0
 
-                DishesScreen(navController, dishes, totalExpense)
+                DishesScreen(myApplication, highlightDishes, totalExpense)
 
                 selectedState.value = 1
             }
@@ -188,7 +188,7 @@ data class IconInfo(val imageVector: ImageVector, val label: String)
 
 sealed class Screen(val route: String) {
     object HomeScreen : Screen("home_screen")
-    object DishesScreen : Screen("screen_b/{dishes}/{totalExpense}") {
+    object DishesScreen : Screen("screen_b/{highlightDishes}/{totalExpense}") {
         fun createRoute(
             dishesJson: String = "[]",
             totalExpense: Int = 0
@@ -199,11 +199,11 @@ sealed class Screen(val route: String) {
 
 
 @Composable
-fun DishesScreen2(navController: NavController, dishes: List<DishInfo>, totalExpense: Int) {
+fun DishesScreen2(navController: NavController, highlightDishes: List<DishInfo>, totalExpense: Int) {
     Log.i("吃什么？", "DishesScreen2 执行了。。。")
     Column {
         Text("Dishes:")
-        for (dish in dishes) {
+        for (dish in highlightDishes) {
             Text("${dish.name} (${dish.eatenTimes} times)")
         }
         Text("Total Expense: $totalExpense")

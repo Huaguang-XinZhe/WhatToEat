@@ -16,6 +16,4 @@ class DishRepository(private val appDatabase: AppDatabase) {
         }
     }
 
-
-    // 其他方法...
 }
