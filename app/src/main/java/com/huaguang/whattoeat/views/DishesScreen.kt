@@ -1,6 +1,7 @@
 package com.huaguang.whattoeat.views
 
 
+import android.util.Log
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +34,11 @@ fun DishesScreen(
     highlightDishes: List<DishInfo>,
     totalExpense: Int
 ) {
+    LaunchedEffect(Unit) {
+        //在 Compose 的生命周期里只会执行一次，所以在后续页面访问时不会重新加载数据。
+        viewModel.loadMenuData()
+    }
+
     viewModel.highlightDishes.value = highlightDishes
     viewModel.totalExpense = totalExpense
 
@@ -68,14 +75,17 @@ fun DishList(
     LazyColumn(
         modifier = modifier
     ) {
-        items(viewModel.getUpdateDishes()) { dish ->
-            DishRow(dish)
+        items(viewModel.dishes.value) { dish ->
+            DishRow(viewModel, dish)
         }
     }
 }
 
 @Composable
-fun DishRow(dish: DishInfo) {
+fun DishRow(
+    viewModel: DishesScreenViewModel,
+    dish: DishInfo
+) {
     Row(
         modifier = Modifier.padding(horizontal = 35.dp, vertical = 15.dp)
     ) {
@@ -106,7 +116,7 @@ fun DishRow(dish: DishInfo) {
         }
 
         IconButton(
-            onClick = { /**/ }
+            onClick = { viewModel.onDeleteItem(dish) }
         ) {
             Icon(
                 imageVector = Icons.Filled.Delete,
@@ -122,10 +132,11 @@ fun Summary(
     viewModel: DishesScreenViewModel,
     modifier: Modifier
 ) {
+    Log.i("吃什么？", "Summary 执行！！！")
     Row(
         modifier = modifier
     ) {
-        Text("完吃率: ${viewModel.calFinishedRate()}%")
+        Text("完吃率: ${viewModel.finishedRate.value}%")
 
         Spacer(modifier = Modifier.width(25.dp))
 
