@@ -1,6 +1,7 @@
 package com.huaguang.whattoeat.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -22,5 +23,8 @@ interface DishInfoDao {
 
     @Query("SELECT * FROM dish_info")
     suspend fun getAllDishInfo(): List<DishInfo>
+
+    @Delete
+    suspend fun deleteDishInfo(dishInfo: DishInfo): Int
 
 }

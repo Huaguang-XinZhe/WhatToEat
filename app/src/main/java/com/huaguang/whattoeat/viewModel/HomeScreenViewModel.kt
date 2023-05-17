@@ -7,13 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
-import com.huaguang.whattoeat.aMoreExpensiveDishes
 import com.huaguang.whattoeat.data.AppDatabase
 import com.huaguang.whattoeat.data.Dish
 import com.huaguang.whattoeat.data.DishInfo
 import com.huaguang.whattoeat.data.DishRepository
-import com.huaguang.whattoeat.displayDishDefaultValue
-import com.huaguang.whattoeat.regularDishes
+import com.huaguang.whattoeat.data.aMoreExpensiveDishes
+import com.huaguang.whattoeat.data.displayDishDefaultValue
+import com.huaguang.whattoeat.data.regularDishes
 import com.huaguang.whattoeat.utils.SPHelper
 import com.huaguang.whattoeat.utils.copyToClipboard
 import kotlinx.coroutines.coroutineScope
@@ -147,6 +147,8 @@ class HomeScreenViewModel(
         expensiveDishList: MutableList<Boolean>,
     ): ((context: Context) -> Unit)? {
 
+        // TODO: 只在第一次点击按钮的时候才从数据库加载 dishes 列表 
+        // TODO: 能不能做到在 Home 页已经完全显示后即刻从数据库加载数据（预加载） 
         val dishList = if (isExpensive) aMoreExpensiveDishes else regularDishes
         var randomDish = randomDish(dishList)
 

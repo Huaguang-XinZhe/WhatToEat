@@ -1,6 +1,6 @@
-package com.huaguang.whattoeat
+package com.huaguang.whattoeat.data
 
-val regularDishes = listOf(
+var regularDishes = listOf(
     "酸辣土豆丝木桶饭 11",
     "松仁玉米木桶饭 13",
     "韭菜炒蛋木桶饭 13",
@@ -32,7 +32,7 @@ val regularDishes = listOf(
     "肉炒粉 10",
     "扬州炒饭 10"
 )
-val aMoreExpensiveDishes = listOf(
+var aMoreExpensiveDishes = listOf(
     "鲜鱼翻身木桶饭 17",
     "红烧下饭凉拌鲫鱼 17",
     "双椒鸡木桶饭 18",

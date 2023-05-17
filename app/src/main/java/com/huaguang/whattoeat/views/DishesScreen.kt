@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Snackbar
+import androidx.compose.material.SnackbarHost
+import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
@@ -65,6 +68,8 @@ fun DishesScreen(
             }
         )
     }
+
+    UndoSnackBar(viewModel = viewModel)
 }
 
 @Composable
@@ -128,6 +133,40 @@ fun DishRow(
 }
 
 @Composable
+fun UndoSnackBar(
+    viewModel: DishesScreenViewModel
+) {
+    LaunchedEffect(viewModel.snackBarHostState.currentSnackbarData) {
+        if (viewModel.snackBarHostState.currentSnackbarData == null) {
+            // SnackBar 已消失，设置 snackBarDismissed 为 true
+            viewModel.snackBarDismissed.value = true
+        }
+    }
+
+    SnackbarHost(
+        hostState = viewModel.snackBarHostState,
+        modifier = Modifier.padding(8.dp)
+    ) { data ->
+        Snackbar(
+            action = {
+                TextButton(onClick = {
+                    // 恢复 UI 中删除的 item
+                    viewModel.restoreItem(
+                        viewModel.deleteItem.index,
+                        viewModel.deleteItem.dish
+                    )
+                }) {
+                    Text(text = data.actionLabel ?: "")
+                }
+            },
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Text(text = data.message)
+        }
+    }
+}
+
+@Composable
 fun Summary(
     viewModel: DishesScreenViewModel,
     modifier: Modifier
@@ -136,6 +175,7 @@ fun Summary(
     Row(
         modifier = modifier
     ) {
+        // 点击时就执行方法，而查看数据时就不要这么做，访问缓存就可以了。
         Text("完吃率: ${viewModel.finishedRate.value}%")
 
         Spacer(modifier = Modifier.width(25.dp))
